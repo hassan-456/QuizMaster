@@ -1,0 +1,63 @@
+.rules {
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.rules li {
+  margin: 0.7em 0;
+  color: #cecece;
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+#form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 28px;
+}
+
+.input-label {
+  align-self: center;
+  width: min(100%, 420px);
+  margin-bottom: 8px;
+  color: #cecece;
+  font-size: 0.95rem;
+}
+
+#form .userid,
+#form .message-card {
+    width: min(100%, 420px);
+}
+
+#form .userid {
+    padding: 0.9em 1em;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+}
+
+#form .message-card {
+    margin-top: 16px;
+}
+
+.start {
+  display: flex;
+  justify-content: center;
+  padding-top: 1.4em;
+}
+
+.start .btn {
+    background: var(--yellow);
+    color: #202020;
+}
+
+.resume {
+    margin: 18px 0 0;
+    text-align: center;
+}
+
+.resume a {
+    color: var(--primary-color);
+    font-weight: 700;
+}
