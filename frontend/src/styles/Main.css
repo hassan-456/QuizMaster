@@ -61,3 +61,52 @@
     color: var(--primary-color);
     font-weight: 700;
 }
+
+.test-grid {
+    display: grid;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.test-card {
+    padding: 18px;
+    border: 1px solid rgba(13, 255, 146, 0.22);
+    border-radius: 14px;
+    background: #14171c;
+}
+
+.test-card h2 {
+    margin: 0 0 8px;
+    font-size: 1.35rem;
+}
+
+.test-card p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 14px 0;
+}
+
+.chips span {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #22262c;
+    color: #dedede;
+    font-size: 0.85rem;
+}
+
+.top-link {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.container .message-card {
+    width: min(100%, 520px);
+    margin: 18px auto 0;
+}

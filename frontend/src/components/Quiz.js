@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import Questions from './Questions';
 import { useFetchQuestion } from '../hooks/FetchQuestion';
 import { moveNextAction, movePrevAction } from '../redux/question_reducer';
@@ -11,8 +11,9 @@ export default function Quiz() {
     const [done, setDone] = useState(false);
     const [now, setNow] = useState(Date.now());
     const dispatch = useDispatch();
-    const { isLoading, serverError, retry } = useFetchQuestion();
-    const { queue, trace, title, endsAt } = useSelector(state => state.questions);
+    const { testId } = useParams();
+    const { isLoading, serverError, retry } = useFetchQuestion(testId);
+    const { queue, trace, title, endsAt, testId: storedTestId, pointsPerQuestion, passPercentage } = useSelector(state => state.questions);
     const { result, submitted } = useSelector(state => state.result);
 
     useEffect(() => {
@@ -25,14 +26,22 @@ export default function Quiz() {
         : null;
 
     useEffect(() => {
-        if (secondsLeft === 0 && queue.length > 0) setDone(true);
-    }, [secondsLeft, queue.length]);
+        setDone(false);
+    }, [testId]);
+
+    useEffect(() => {
+        if (secondsLeft === 0 && queue.length > 0 && storedTestId === testId) setDone(true);
+    }, [secondsLeft, queue.length, storedTestId, testId]);
 
     useEffect(() => {
         setWarning('');
     }, [trace]);
 
-    if (submitted || done) {
+    if (!testId) {
+        return <Navigate to="/" replace />;
+    }
+
+    if ((submitted && storedTestId === testId) || done) {
         return <Navigate to="/result" replace />;
     }
 
@@ -65,16 +74,17 @@ export default function Quiz() {
                     <p className="eyebrow">QuizMaster</p>
                     <h1 className="title compact text-light">{title || 'Quiz'}</h1>
                 </div>
-                {queue.length > 0 && (
+                {queue.length > 0 && storedTestId === testId && (
                     <div className="quiz-meta">
                         <span>Question {trace + 1} of {queue.length}</span>
+                        <span>{pointsPerQuestion} pts · pass {passPercentage}%</span>
                         <span>{answered} answered</span>
                         <span className={secondsLeft !== null && secondsLeft <= 30 ? 'timer danger' : 'timer'} aria-live="polite">
                             {secondsLeft === null ? '--:--' : formatTime(secondsLeft)}
                         </span>
                     </div>
                 )}
-                {queue.length > 0 && (
+                {queue.length > 0 && storedTestId === testId && (
                     <div className="progress" aria-hidden="true">
                         <div className="progress-bar" style={{ width: `${progress}%` }}></div>
                     </div>
@@ -90,7 +100,7 @@ export default function Quiz() {
                 </div>
             )}
 
-            {!isLoading && !serverError && queue.length > 0 && (
+            {!isLoading && !serverError && storedTestId === testId && queue.length > 0 && (
                 <>
                     <Questions />
                     {warning && <p className="form-error" role="alert">{warning}</p>}

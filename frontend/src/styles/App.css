@@ -27,6 +27,10 @@ input {
   font-family: 'Poppins', sans-serif;
 }
 
+.container.wide {
+  width: min(980px, calc(100% - 32px));
+}
+
 .container {
   width: min(860px, calc(100% - 32px));
   margin: 32px auto 48px;

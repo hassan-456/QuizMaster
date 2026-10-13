@@ -10,18 +10,19 @@ import '../styles/Result.css';
 export default function Result() {
     const dispatch = useDispatch();
     const { result, userId, summary, submitted } = useSelector(state => state.result);
+    const testId = useSelector(state => state.questions.testId);
     const [error, setError] = useState('');
     const [saving, setSaving] = useState(!submitted);
     const [attempt, setAttempt] = useState(0);
 
     useEffect(() => {
-        if (submitted || !userId || !Array.isArray(result) || result.length === 0) return undefined;
+        if (submitted || !userId || !testId || !Array.isArray(result) || result.length === 0) return undefined;
 
         let active = true;
         setSaving(true);
         setError('');
 
-        publishResult({ username: userId, answers: result })
+        publishResult({ username: userId, testId, answers: result })
             .then((response) => {
                 if (!active) return;
                 if (!response?.success || !response.result) {
@@ -40,10 +41,10 @@ export default function Result() {
         return () => {
             active = false;
         };
-    }, [submitted, userId, result, dispatch, attempt]);
+    }, [submitted, userId, result, dispatch, attempt, testId]);
 
     if (!submitted && result.length === 0) {
-        return <Navigate to="/quiz" replace />;
+        return <Navigate to={testId ? `/quiz/${testId}` : '/'} replace />;
     }
 
     function onRestart() {
@@ -57,7 +58,7 @@ export default function Result() {
         <div className="container">
             <header className="hero">
                 <p className="eyebrow">QuizMaster</p>
-                <h1 className="title compact text-light">Your Result</h1>
+                <h1 className="title compact text-light">{summary?.title || 'Your Result'}</h1>
             </header>
 
             {saving && !summary && <h3 className="text-light">Saving your result...</h3>}
@@ -120,10 +121,10 @@ export default function Result() {
             )}
 
             <div className="start">
-                <Link className="btn" to="/" onClick={onRestart}>Restart</Link>
+                <Link className="btn" to="/" onClick={onRestart}>Back to tests</Link>
             </div>
 
-            <ResultTable refreshKey={summary?.id || attempt} highlightName={userId} />
+            <ResultTable testId={summary?.testId || testId} refreshKey={summary?.id || attempt} highlightName={userId} />
         </div>
     );
 }

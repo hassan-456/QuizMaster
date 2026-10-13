@@ -3,19 +3,26 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { resetAllAction } from '../redux/question_reducer';
 import { resetResultAction, setUserId } from '../redux/result_reducer';
-import { getServerData, formatTime } from '../helper/helper';
+import { formatTime, getServerData } from '../helper/helper';
 import '../styles/Main.css';
 
 const USERNAME_PATTERN = /^[a-zA-Z0-9 _-]{2,20}$/;
 
+function attemptText(test) {
+    if (!test.maxAttempts) return 'Unlimited attempts';
+    if (test.attemptsUsed) return `${Math.max(0, test.attemptsRemaining)} of ${test.maxAttempts} attempts left`;
+    return `${test.maxAttempts} attempt${test.maxAttempts === 1 ? '' : 's'} allowed`;
+}
+
 export default function Main() {
-    const [username, setUsername] = useState('');
+    const savedName = useSelector(state => state.result.userId);
+    const savedTestId = useSelector(state => state.questions.testId);
+    const [username, setUsername] = useState(savedName || '');
     const [error, setError] = useState('');
     const [serverError, setServerError] = useState('');
-    const [quiz, setQuiz] = useState(null);
+    const [tests, setTests] = useState([]);
     const [status, setStatus] = useState('loading');
     const [reloadKey, setReloadKey] = useState(0);
-    const savedName = useSelector(state => state.result.userId);
     const savedQuestions = useSelector(state => state.questions.queue.length);
     const submitted = useSelector(state => state.result.submitted);
     const dispatch = useDispatch();
@@ -23,70 +30,60 @@ export default function Main() {
 
     useEffect(() => {
         let active = true;
-        setStatus('loading');
-        setServerError('');
-
-        getServerData('/api/questions')
-            .then((response) => {
-                if (!active) return;
-                if (!response?.success || !Array.isArray(response.questions) || response.questions.length === 0) {
-                    throw new Error(response?.message || 'Quiz is unavailable.');
-                }
-                setQuiz(response);
-                setStatus('ready');
-            })
-            .catch((loadError) => {
-                if (!active) return;
-                setServerError(loadError.message);
-                setStatus('error');
-            });
+        const trimmed = username.trim();
+        const query = USERNAME_PATTERN.test(trimmed) ? `?username=${encodeURIComponent(trimmed)}` : '';
+        const timer = setTimeout(() => {
+            setStatus('loading');
+            setServerError('');
+            getServerData(`/api/tests${query}`)
+                .then((response) => {
+                    if (!active) return;
+                    setTests(Array.isArray(response?.tests) ? response.tests : []);
+                    setStatus('ready');
+                })
+                .catch((loadError) => {
+                    if (!active) return;
+                    setServerError(loadError.message);
+                    setStatus('error');
+                });
+        }, trimmed ? 300 : 0);
 
         return () => {
             active = false;
+            clearTimeout(timer);
         };
-    }, [reloadKey]);
+    }, [reloadKey, username]);
 
-    function startQuiz(event) {
-        event.preventDefault();
+    function startTest(test) {
         const name = username.trim();
-
         if (!USERNAME_PATTERN.test(name)) {
             setError('Enter a username with 2–20 letters, numbers, spaces, _ or -.');
             return;
         }
-
-        if (status !== 'ready') {
-            setError('The quiz is not ready yet. Make sure the server is running.');
+        if (!test.canStart) {
+            setError('You have used every attempt allowed for this test.');
             return;
         }
 
         dispatch(resetAllAction());
         dispatch(resetResultAction());
         dispatch(setUserId(name));
-        navigate('/quiz');
+        navigate(`/quiz/${test.id}`);
     }
 
-    const minutes = quiz ? Math.max(1, Math.round(quiz.durationSeconds / 60)) : 5;
-    const optionCount = quiz?.questions?.[0]?.options?.length || 4;
-
     return (
-        <div className="container">
+        <div className="container wide">
+            <div className="top-link">
+                <Link to="/admin">Admin panel</Link>
+            </div>
             <header className="hero">
                 <p className="eyebrow">QuizMaster</p>
-                <h1 className="title text-light">{quiz?.title || 'JavaScript Quiz'}</h1>
-                <p className="subtitle">Answer each question, review your choices, and see your score at the end.</p>
+                <h1 className="title text-light">Choose a test</h1>
+                <p className="subtitle">Pick a test published by the admin. The time limit, pass mark, and number of attempts are set for that test.</p>
             </header>
 
-            <ol className="rules">
-                <li>You will be asked {quiz?.totalQuestions || 10} questions, one at a time.</li>
-                <li>{quiz?.pointsPerQuestion || 10} points are awarded for every correct answer.</li>
-                <li>Each question has {optionCount} options. Choose one.</li>
-                <li>You can go back and change answers before the timer ends.</li>
-                <li>You have {quiz ? formatTime(quiz.durationSeconds) : `${minutes}:00`} ({minutes} minutes). A score of {quiz?.passPercentage || 50}% or higher passes.</li>
-            </ol>
-
-            <form id="form" onSubmit={startQuiz}>
-                <label className="input-label" htmlFor="username">Username</label>
+            <form id="form" onSubmit={(event) => event.preventDefault()}>
+                <label className="input-label" htmlFor="username">Your name</label>
                 <input
                     id="username"
                     className="userid"
@@ -102,30 +99,57 @@ export default function Main() {
                     }}
                 />
                 {error && <p className="form-error" role="alert">{error}</p>}
-                {serverError && (
-                    <div className="message-card" role="alert">
-                        <p>{serverError}</p>
-                        <button className="btn next" type="button" onClick={() => setReloadKey((value) => value + 1)}>
-                            Retry connection
-                        </button>
-                    </div>
-                )}
-                {savedName && savedQuestions > 0 && !submitted && (
-                    <p className="resume">
-                        <Link to="/quiz">Continue as {savedName}</Link>
-                    </p>
-                )}
-                {submitted && (
-                    <p className="resume">
-                        <Link to="/result">View your latest result</Link>
-                    </p>
-                )}
-                <div className="start">
-                    <button className="btn" type="submit" disabled={status !== 'ready'}>
-                        {status === 'loading' ? 'Loading quiz...' : 'Start Quiz'}
+            </form>
+
+            {serverError && (
+                <div className="message-card" role="alert">
+                    <p>{serverError}</p>
+                    <button className="btn next" type="button" onClick={() => setReloadKey((value) => value + 1)}>
+                        Retry connection
                     </button>
                 </div>
-            </form>
+            )}
+
+            {savedName && savedTestId && savedQuestions > 0 && !submitted && (
+                <p className="resume">
+                    <Link to={`/quiz/${savedTestId}`}>Continue as {savedName}</Link>
+                </p>
+            )}
+            {submitted && (
+                <p className="resume">
+                    <Link to="/result">View your latest result</Link>
+                </p>
+            )}
+
+            {status === 'loading' && <h3 className="text-light loading-note">Loading tests...</h3>}
+
+            {status === 'ready' && tests.length === 0 && (
+                <p className="empty-note">No tests are published yet. An admin can add one from the admin panel.</p>
+            )}
+
+            <div className="test-grid">
+                {tests.map((test) => (
+                    <article className="test-card" key={test.id}>
+                        <h2>{test.title}</h2>
+                        {test.description && <p>{test.description}</p>}
+                        <div className="chips">
+                            <span>{test.totalQuestions} questions</span>
+                            <span>{test.pointsPerQuestion} pts each</span>
+                            <span>{formatTime(test.durationSeconds)} time limit</span>
+                            <span>Pass at {test.passPercentage}%</span>
+                            <span>{attemptText(test)}</span>
+                        </div>
+                        <button
+                            className="btn next"
+                            type="button"
+                            disabled={!test.canStart}
+                            onClick={() => startTest(test)}
+                        >
+                            {test.canStart ? 'Take test' : 'No attempts left'}
+                        </button>
+                    </article>
+                ))}
+            </div>
         </div>
     );
 }

@@ -1,8 +1,9 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
 const resultSchema = new Schema({
     username: { type: String, required: true, trim: true, minlength: 2, maxlength: 20 },
+    test: { type: Schema.Types.ObjectId, ref: 'Test', required: true },
     answers: { type: [Number], default: [] },
     attempts: { type: Number, default: 0, min: 0 },
     points: { type: Number, default: 0, min: 0 },
@@ -11,6 +12,7 @@ const resultSchema = new Schema({
     achieved: { type: String, enum: ['Passed', 'Failed'], default: 'Failed' }
 }, { timestamps: true });
 
-resultSchema.index({ points: -1, percentage: -1, createdAt: 1 });
+resultSchema.index({ test: 1, points: -1, percentage: -1, createdAt: 1 });
+resultSchema.index({ test: 1, username: 1, createdAt: -1 });
 
 export default mongoose.model('result', resultSchema);

@@ -46,3 +46,30 @@ export async function postServerData(path, body) {
         throw new Error(messageFrom(error));
     }
 }
+
+const ADMIN_TOKEN_KEY = 'quizmaster-admin-token';
+
+export function getAdminToken() {
+    return localStorage.getItem(ADMIN_TOKEN_KEY) || '';
+}
+
+export function setAdminToken(token) {
+    if (token) localStorage.setItem(ADMIN_TOKEN_KEY, token);
+    else localStorage.removeItem(ADMIN_TOKEN_KEY);
+}
+
+export async function adminRequest(method, path, body) {
+    try {
+        const token = getAdminToken();
+        const { data } = await api.request({
+            method,
+            url: path,
+            data: body,
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        return data;
+    } catch (error) {
+        if (error?.response?.status === 401) setAdminToken('');
+        throw new Error(messageFrom(error));
+    }
+}

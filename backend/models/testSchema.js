@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
 const questionItemSchema = new Schema({
@@ -14,20 +14,22 @@ const questionItemSchema = new Schema({
     answer: { type: Number, required: true, min: 0 }
 }, { _id: false });
 
-const quizSchema = new Schema({
-    version: { type: Number, required: true },
+const testSchema = new Schema({
     title: { type: String, required: true, trim: true },
-    pointsPerQuestion: { type: Number, default: 10 },
-    passPercentage: { type: Number, default: 50 },
-    durationSeconds: { type: Number, default: 300 },
+    description: { type: String, default: '', trim: true },
+    pointsPerQuestion: { type: Number, required: true, min: 1 },
+    passPercentage: { type: Number, required: true, min: 1, max: 100 },
+    durationSeconds: { type: Number, required: true, min: 60 },
+    maxAttempts: { type: Number, required: true, min: 0, default: 1 },
+    isPublished: { type: Boolean, default: false },
     questions: {
         type: [questionItemSchema],
         required: true,
         validate: {
             validator: (questions) => Array.isArray(questions) && questions.length > 0,
-            message: 'Quiz must include questions.'
+            message: 'A test needs at least one question.'
         }
     }
 }, { timestamps: true });
 
-export default mongoose.model('Question', quizSchema);
+export default mongoose.model('Test', testSchema);

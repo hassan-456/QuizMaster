@@ -23,6 +23,7 @@ function loadSession() {
         const userId = saved?.result?.userId;
 
         if (typeof userId !== 'string' || !userId.trim() || !isQuestionList(queue)) return undefined;
+        if (typeof saved.questions?.testId !== 'string' || !saved.questions.testId) return undefined;
         if (!Array.isArray(answers) || answers.length !== queue.length) return undefined;
 
         const lastIndex = queue.length - 1;
@@ -35,10 +36,12 @@ function loadSession() {
                 ...initialQuestionState,
                 queue,
                 trace,
+                testId: saved.questions.testId,
                 title: saved.questions.title || initialQuestionState.title,
                 pointsPerQuestion: saved.questions.pointsPerQuestion || 10,
                 passPercentage: saved.questions.passPercentage || 50,
                 durationSeconds: saved.questions.durationSeconds || 300,
+                maxAttempts: Number.isInteger(saved.questions.maxAttempts) ? saved.questions.maxAttempts : 1,
                 endsAt: typeof saved.questions.endsAt === 'number' ? saved.questions.endsAt : null
             },
             result: {

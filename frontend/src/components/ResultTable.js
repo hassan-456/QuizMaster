@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { formatWhen, getServerData } from '../helper/helper';
 
-export default function ResultTable({ refreshKey = 0, highlightName = '' }) {
+export default function ResultTable({ testId = '', refreshKey = 0, highlightName = '' }) {
     const [data, setData] = useState([]);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
@@ -10,7 +10,14 @@ export default function ResultTable({ refreshKey = 0, highlightName = '' }) {
         let active = true;
         setLoading(true);
 
-        getServerData('/api/result')
+        if (!testId) {
+            setData([]);
+            setError('');
+            setLoading(false);
+            return undefined;
+        }
+
+        getServerData(`/api/result?testId=${encodeURIComponent(testId)}`)
             .then((response) => {
                 if (!active) return;
                 setData(Array.isArray(response?.results) ? response.results : []);
@@ -28,7 +35,7 @@ export default function ResultTable({ refreshKey = 0, highlightName = '' }) {
         return () => {
             active = false;
         };
-    }, [refreshKey]);
+    }, [refreshKey, testId]);
 
     return (
         <section className="leaderboard">

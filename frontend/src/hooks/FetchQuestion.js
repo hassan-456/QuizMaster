@@ -2,19 +2,23 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getServerData } from '../helper/helper';
 import { startExamAction } from '../redux/question_reducer';
-import { initResultAction } from '../redux/result_reducer';
+import { clearAttemptAction, initResultAction } from '../redux/result_reducer';
 
-export const useFetchQuestion = () => {
+export const useFetchQuestion = (testId) => {
     const dispatch = useDispatch();
     const queueLength = useSelector(state => state.questions.queue.length);
+    const storedTestId = useSelector(state => state.questions.testId);
+    const userId = useSelector(state => state.result.userId);
+    const ready = queueLength > 0 && storedTestId === testId;
     const [reloadKey, setReloadKey] = useState(0);
     const [state, setState] = useState({
-        isLoading: queueLength === 0,
+        isLoading: !ready,
         serverError: null
     });
 
     useEffect(() => {
-        if (queueLength > 0) {
+        if (!testId) return undefined;
+        if (ready) {
             setState({ isLoading: false, serverError: null });
             return undefined;
         }
@@ -25,7 +29,8 @@ export const useFetchQuestion = () => {
             setState({ isLoading: true, serverError: null });
 
             try {
-                const response = await getServerData('/api/questions');
+                const username = encodeURIComponent(userId || '');
+                const response = await getServerData(`/api/tests/${testId}?username=${username}`);
                 const questions = Array.isArray(response?.questions) ? response.questions : [];
                 const validQuestions = questions.filter((question) => (
                     question
@@ -35,17 +40,23 @@ export const useFetchQuestion = () => {
                 ));
 
                 if (!response?.success || validQuestions.length === 0) {
-                    throw new Error(response?.message || 'No questions are available.');
+                    throw new Error(response?.message || 'This test is not available.');
                 }
 
                 if (!active) return;
 
+                if (storedTestId && storedTestId !== testId) {
+                    dispatch(clearAttemptAction());
+                }
+
                 dispatch(startExamAction({
                     question: validQuestions,
+                    testId,
                     title: response.title,
                     pointsPerQuestion: response.pointsPerQuestion,
                     passPercentage: response.passPercentage,
-                    durationSeconds: response.durationSeconds
+                    durationSeconds: response.durationSeconds,
+                    maxAttempts: response.maxAttempts
                 }));
                 dispatch(initResultAction(validQuestions.length));
                 setState({ isLoading: false, serverError: null });
@@ -53,7 +64,7 @@ export const useFetchQuestion = () => {
                 if (!active) return;
                 setState({
                     isLoading: false,
-                    serverError: error.message || 'Unable to load questions.'
+                    serverError: error.message || 'Unable to load this test.'
                 });
             }
         };
@@ -63,7 +74,7 @@ export const useFetchQuestion = () => {
         return () => {
             active = false;
         };
-    }, [dispatch, queueLength, reloadKey]);
+    }, [dispatch, queueLength, ready, reloadKey, storedTestId, testId, userId]);
 
     return {
         isLoading: state.isLoading,

@@ -1,36 +1,53 @@
-import Quiz from '../models/questionSchema.js';
+import bcrypt from 'bcryptjs';
+import Admin from '../models/adminSchema.js';
+import Test from '../models/testSchema.js';
 import quiz from './data.js';
 
-function isValidQuiz(doc) {
-    return doc
-        && doc.version === quiz.version
-        && Array.isArray(doc.questions)
-        && doc.questions.length === quiz.questions.length
-        && doc.questions.every((item, index) => (
-            typeof item.question === 'string'
-            && Array.isArray(item.options)
-            && item.options.length >= 2
-            && item.answer === quiz.questions[index].answer
-        ));
+async function ensureAdmin() {
+    const username = String(process.env.ADMIN_USERNAME || 'admin').trim();
+    const password = String(process.env.ADMIN_PASSWORD || 'admin123');
+    const existing = await Admin.findOne({ username });
+
+    if (existing) {
+        console.log(`Admin ready (${username})`);
+        return existing;
+    }
+
+    const created = await Admin.create({
+        username,
+        passwordHash: await bcrypt.hash(password, 10)
+    });
+    console.log(`Admin account created (${username})`);
+    return created;
 }
 
-/** Replace a missing or outdated quiz with the bundled question set. */
-export default async function ensureQuiz() {
+async function ensureSampleTest() {
+    const count = await Test.countDocuments();
+    if (count > 0) {
+        console.log(`${count} test${count === 1 ? '' : 's'} ready`);
+        return;
+    }
+
     quiz.questions.forEach((item) => {
         if (!Number.isInteger(item.answer) || item.answer < 0 || item.answer >= item.options.length) {
             throw new Error(`Invalid answer index for: ${item.question}`);
         }
     });
 
-    const existing = await Quiz.findOne().sort({ createdAt: -1 });
+    await Test.create({
+        title: quiz.title,
+        description: 'Starter JavaScript test. Change the questions and rules from the admin panel.',
+        pointsPerQuestion: quiz.pointsPerQuestion,
+        passPercentage: quiz.passPercentage,
+        durationSeconds: quiz.durationSeconds,
+        maxAttempts: 3,
+        isPublished: true,
+        questions: quiz.questions
+    });
+    console.log('Sample test created');
+}
 
-    if (isValidQuiz(existing)) {
-        console.log(`Quiz ready (${existing.questions.length} questions)`);
-        return existing;
-    }
-
-    await Quiz.deleteMany();
-    const created = await Quiz.create(quiz);
-    console.log(`Quiz seeded (${created.questions.length} questions)`);
-    return created;
+export default async function ensureQuiz() {
+    await ensureAdmin();
+    await ensureSampleTest();
 }

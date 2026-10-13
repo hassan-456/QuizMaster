@@ -29,6 +29,11 @@ export const resultReducer = createSlice({
             state.summary = action.payload;
             state.submitted = true;
         },
+        clearAttemptAction: (state) => {
+            state.result = [];
+            state.summary = null;
+            state.submitted = false;
+        },
         resetResultAction: () => initialResultState
     }
 });
@@ -38,6 +43,7 @@ export const {
     initResultAction,
     setAnswerAction,
     setSummaryAction,
+    clearAttemptAction,
     resetResultAction
 } = resultReducer.actions;
 
