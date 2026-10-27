@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import * as controller from '../controllers/controller.js';
 import * as admin from '../controllers/adminController.js';
+import * as questionImport from '../controllers/questionImportController.js';
 import requireAdmin from '../middleware/requireAdmin.js';
+import { uploadQuestionFile } from '../middleware/uploadQuestions.js';
 
 const router = Router();
 
@@ -15,6 +17,9 @@ router.get('/admin/tests/:id', requireAdmin, admin.getTest);
 router.put('/admin/tests/:id', requireAdmin, admin.updateTest);
 router.delete('/admin/tests/:id', requireAdmin, admin.deleteTest);
 router.get('/admin/tests/:id/results', requireAdmin, admin.testResults);
+router.get('/admin/questions/template', requireAdmin, questionImport.downloadTemplate);
+router.post('/admin/questions/preview', requireAdmin, uploadQuestionFile, questionImport.previewQuestions);
+router.post('/admin/tests/:id/questions/import', requireAdmin, uploadQuestionFile, questionImport.importQuestions);
 
 router.get('/tests', controller.listTests);
 router.get('/tests/:id', controller.getTestQuestions);

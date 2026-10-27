@@ -22,19 +22,21 @@ function summarize(test) {
     };
 }
 
-function presentTest(test) {
+export function presentTest(test) {
     const plain = typeof test.toObject === 'function' ? test.toObject() : test;
     return {
         ...summarize(plain),
         questions: (plain.questions || []).map((question) => ({
             question: question.question,
             options: [...question.options],
-            answer: question.answer
+            answer: question.answer,
+            category: question.category || '',
+            difficulty: question.difficulty || ''
         }))
     };
 }
 
-function sendError(res, error) {
+export function sendError(res, error) {
     const status = error.status || (error.name === 'ValidationError' ? 400 : 500);
     if (status >= 500) console.error('Admin request failed:', error.message);
     return res.status(status).json({

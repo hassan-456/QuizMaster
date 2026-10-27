@@ -1,3 +1,5 @@
+import { MAX_OPTIONS, MAX_QUESTION_LENGTH, MAX_QUESTIONS_PER_TEST, MIN_OPTIONS, MIN_QUESTION_LENGTH } from './limits.js';
+
 function fail(message) {
     const error = new Error(message);
     error.status = 400;
@@ -18,11 +20,11 @@ function normalizeQuestion(item, index) {
         options.push(text);
     });
 
-    if (question.length < 3 || question.length > 500) {
-        fail(`Question ${index + 1} must be 3–500 characters.`);
+    if (question.length < MIN_QUESTION_LENGTH || question.length > MAX_QUESTION_LENGTH) {
+        fail(`Question ${index + 1} must be ${MIN_QUESTION_LENGTH}–${MAX_QUESTION_LENGTH} characters.`);
     }
-    if (options.length < 2 || options.length > 6) {
-        fail(`Question ${index + 1} needs 2–6 options.`);
+    if (options.length < MIN_OPTIONS || options.length > MAX_OPTIONS) {
+        fail(`Question ${index + 1} needs ${MIN_OPTIONS}–${MAX_OPTIONS} options.`);
     }
     if (new Set(options.map((option) => option.toLowerCase())).size !== options.length) {
         fail(`Question ${index + 1} has duplicate options.`);
@@ -31,7 +33,13 @@ function normalizeQuestion(item, index) {
         fail(`Question ${index + 1} needs a correct option selected.`);
     }
 
-    return { question, options, answer };
+    return {
+        question,
+        options,
+        answer,
+        category: String(item?.category || '').trim(),
+        difficulty: String(item?.difficulty || '').trim()
+    };
 }
 
 /** Turn an admin form into a test document. Restrictions are stored with the test. */
@@ -58,8 +66,8 @@ export function normalizeTest(body) {
     if (!Number.isInteger(maxAttempts) || maxAttempts < 0 || maxAttempts > 20) {
         fail('Max attempts must be 0 (unlimited) or a whole number from 1 to 20.');
     }
-    if (questions.length < 1 || questions.length > 40) {
-        fail('Add between 1 and 40 questions.');
+    if (questions.length < 1 || questions.length > MAX_QUESTIONS_PER_TEST) {
+        fail(`Add between 1 and ${MAX_QUESTIONS_PER_TEST} questions.`);
     }
 
     return {

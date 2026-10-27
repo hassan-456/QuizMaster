@@ -11,7 +11,9 @@ const questionItemSchema = new Schema({
             message: 'Each question needs at least two options.'
         }
     },
-    answer: { type: Number, required: true, min: 0 }
+    answer: { type: Number, required: true, min: 0 },
+    category: { type: String, default: '', trim: true },
+    difficulty: { type: String, default: '', trim: true }
 }, { _id: false });
 
 const testSchema = new Schema({
