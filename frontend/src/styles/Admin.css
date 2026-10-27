@@ -116,9 +116,131 @@
   margin: 0;
 }
 
+.import-panel {
+  margin: 8px 0 24px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #14171c;
+}
+
+.import-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.import-header h3 {
+  margin: 0 0 6px;
+  color: var(--light-color);
+}
+
+.import-header .hint {
+  margin: 0;
+}
+
+.drop-zone {
+  padding: 20px;
+  border: 1px dashed rgba(13, 255, 146, 0.35);
+  border-radius: 12px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.drop-zone.active {
+  border-color: var(--primary-color);
+  background: rgba(13, 255, 146, 0.06);
+}
+
+.drop-zone input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.drop-zone label {
+  display: inline-block;
+  margin: 0 0 8px;
+  color: var(--primary-color);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.file-meta,
+.import-preview .hint {
+  margin: 8px 0 0;
+}
+
+.import-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 8px;
+}
+
+.import-stats span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #101114;
+  color: var(--light-color);
+  font-size: 0.9rem;
+}
+
+.table-wrap {
+  overflow: auto;
+  max-height: 360px;
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.preview-table th,
+.preview-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-table th {
+  position: sticky;
+  top: 0;
+  background: #101114;
+  color: var(--yellow);
+}
+
+.preview-table tr.valid td:nth-child(2) {
+  color: var(--primary-color);
+}
+
+.preview-table tr.skipped td:nth-child(2) {
+  color: var(--yellow);
+}
+
+.preview-table tr.rejected td:nth-child(2),
+.preview-table tr.rejected td:last-child {
+  color: var(--danger);
+}
+
 @media (max-width: 700px) {
   .restriction-grid,
-  .option-row {
+  .option-row,
+  .import-header {
     grid-template-columns: 1fr;
+    flex-direction: column;
   }
 }

@@ -73,3 +73,49 @@ export async function adminRequest(method, path, body) {
         throw new Error(messageFrom(error));
     }
 }
+
+export async function adminUpload(path, formData) {
+    try {
+        const token = getAdminToken();
+        const { data } = await api.request({
+            method: 'post',
+            url: path,
+            data: formData,
+            timeout: 60000,
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        return data;
+    } catch (error) {
+        if (error?.response?.status === 401) setAdminToken('');
+        throw new Error(messageFrom(error));
+    }
+}
+
+export async function adminDownload(path, filename) {
+    try {
+        const token = getAdminToken();
+        const response = await api.request({
+            method: 'get',
+            url: path,
+            responseType: 'blob',
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        const blob = response.data;
+        if (blob?.type && blob.type.includes('application/json')) {
+            const text = await blob.text();
+            const payload = JSON.parse(text);
+            throw new Error(payload.message || 'Could not download the file.');
+        }
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        if (error?.response?.status === 401) setAdminToken('');
+        throw new Error(messageFrom(error));
+    }
+}

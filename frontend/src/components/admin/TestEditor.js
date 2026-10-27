@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { adminRequest, getAdminToken, setAdminToken } from '../../helper/helper';
+import QuestionImport from './QuestionImport';
 import '../../styles/Admin.css';
 
 function blankQuestion() {
@@ -199,6 +200,36 @@ export default function TestEditor() {
                     </label>
 
                     <h2 className="text-light">Questions</h2>
+                    <QuestionImport
+                        testId={isNew ? '' : testId}
+                        isNew={isNew}
+                        existingQuestions={form.questions}
+                        onApplyToForm={(imported) => {
+                            setForm((current) => {
+                                const keep = current.questions.filter((question) => (
+                                    String(question.question || '').trim()
+                                    || question.options.some((option) => String(option || '').trim())
+                                ));
+                                return {
+                                    ...current,
+                                    questions: keep.length ? [...keep, ...imported] : imported
+                                };
+                            });
+                            setError('');
+                            setNotice(`Added ${imported.length} imported question${imported.length === 1 ? '' : 's'}. Save the test to keep them.`);
+                        }}
+                        onImported={(response) => {
+                            const test = response.test;
+                            if (test?.questions?.length) {
+                                setForm((current) => ({
+                                    ...current,
+                                    questions: test.questions
+                                }));
+                            }
+                            setError('');
+                            setNotice(response.message || 'Questions imported.');
+                        }}
+                    />
                     {form.questions.map((question, questionIndex) => (
                         <fieldset className="question-editor" key={`question-${questionIndex}`}>
                             <legend>Question {questionIndex + 1}</legend>
